@@ -51,7 +51,7 @@ function Get-BuildDefinition
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Headers @{Authorization = $token}  -Method Get
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -UseDefaultCredentials
     $buildDef = $response.value | Where-Object {$_.name -eq $BuildDefinitionName} | select -First 1
     Write-Verbose "Build Definition: $buildDef"
     return $buildDef
@@ -69,7 +69,7 @@ function Get-BuildById
     $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/builds/$BuildId"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Headers @{Authorization = $token}  -Method Get
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -UseDefaultCredentials
     return $response
 }
 
@@ -104,7 +104,7 @@ function Set-BuildTag
         foreach($tag in $buildTagsArray)
         {
             $tagURL = "$baseurl/build/builds/$BuildID/tags/$tag`?api-version=2.0"
-            $response = Invoke-RestMethod -Uri $tagURL -Headers @{Authorization = $token}  -Method Put
+            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -UseDefaultCredentials
         }   
     }
 }
@@ -127,7 +127,7 @@ function Get-BuildsByDefinition
     
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
 
-    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL -Headers @{Authorization = $token}  -Method Get -ContentType "application/json" 
+    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -UseDefaultCredentials
     Write-Verbose "Builds $_builds"
     return $_builds
 }
