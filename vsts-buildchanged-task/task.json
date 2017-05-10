@@ -61,7 +61,7 @@
   ],
   "instanceNameFormat": "Check if build changed",
   "execution": {
-    "PowerShell": {
+    "PowerShell3": {
       "target": "$(currentDirectory)\\CheckBuildChanged.ps1",
       "argumentFormat": ""
     }
