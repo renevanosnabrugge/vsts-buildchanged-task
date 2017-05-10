@@ -25,7 +25,8 @@ function Get-BuildDefinition
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Method Get -UseDefaultCredentials
+    $cred = Get-VstsTfsClientCredentials
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Credential $cred
     $buildDef = $response.value | Where-Object {$_.name -eq $BuildDefinitionName} | select -First 1
     Write-Verbose "Build Definition: $buildDef"
     return $buildDef
@@ -40,9 +41,10 @@ function Get-BuildById
         [int] $BuildId
     )
 
+    $cred = Get-VstsTfsClientCredentials
     $bdURL = "$baseurl/build/builds/$BuildId"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Method Get -UseDefaultCredentials
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Credential $cred
     return $response
 }
 
@@ -64,6 +66,7 @@ function Set-BuildTag
     }
 
     $buildTagsArray = $BuildTags.Split(";");
+    $cred = Get-VstsTfsClientCredentials
 
 
     Write-Verbose "BaseURL: [$baseurl]"
@@ -76,7 +79,7 @@ function Set-BuildTag
         foreach($tag in $buildTagsArray)
         {
             $tagURL = "$baseurl/build/builds/$BuildID/tags/$tag`?api-version=2.0"
-            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -UseDefaultCredentials
+            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -Credential $cred
         }   
     }
 }
@@ -95,10 +98,11 @@ function Get-BuildsByDefinition
         [int] $BuildDefinitionID
     )
     
+    $cred = Get-VstsTfsClientCredentials
     
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
 
-    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -UseDefaultCredentials
+    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Credential $cred
     Write-Verbose "Builds $_builds"
     return $_builds
 }
