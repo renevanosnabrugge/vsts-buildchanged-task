@@ -4,14 +4,31 @@ param
     [string] $outputVarBuildResult,
     [string] $tagsBuildChanged,
     [string] $tagsBuildNotChanged,
+    [string] $VSTSEndPoint,
     [switch] $localRun
 )
+
+Import-Module .\ps_modules\VstsTaskSdk
 
 #global variables
 $baseurl = $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI 
 $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 
 Write-Debug  "baseurl=$baseurl"
+
+function New-VSTSAuthenticationToken
+{
+    [CmdletBinding()]
+    [OutputType([object])]
+         
+    $accesstoken = "";
+
+    $serviceEndpoint = Get-ServiceEndpoint -Name "$VSTSEndPoint" -Context $distributedTaskContext
+    $token = $serviceEndpoint.Authorization.Parameters.apitoken
+    $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($token))
+    $accesstoken = "Basic $encodedCreds"
+    return $accesstoken;
+}
 
 function Get-BuildDefinition
 {
@@ -22,11 +39,12 @@ function Get-BuildDefinition
         [string] $BuildDefinitionName=""
     )
 
+    $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
     $cred = Get-VstsTfsClientCredentials
-    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Credential $cred
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers @{Authorization = $token} 
     $buildDef = $response.value | Where-Object {$_.name -eq $BuildDefinitionName} | select -First 1
     Write-Verbose "Build Definition: $buildDef"
     return $buildDef
@@ -41,10 +59,10 @@ function Get-BuildById
         [int] $BuildId
     )
 
-    $cred = Get-VstsTfsClientCredentials
+    $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/builds/$BuildId"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Credential $cred
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers @{Authorization = $token} 
     return $response
 }
 
@@ -65,8 +83,8 @@ function Set-BuildTag
         return
     }
 
+    $token = New-VSTSAuthenticationToken
     $buildTagsArray = $BuildTags.Split(";");
-    $cred = Get-VstsTfsClientCredentials
 
 
     Write-Verbose "BaseURL: [$baseurl]"
@@ -79,7 +97,7 @@ function Set-BuildTag
         foreach($tag in $buildTagsArray)
         {
             $tagURL = "$baseurl/build/builds/$BuildID/tags/$tag`?api-version=2.0"
-            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -Credential $cred
+            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -Headers @{Authorization = $token} 
         }   
     }
 }
@@ -98,11 +116,10 @@ function Get-BuildsByDefinition
         [int] $BuildDefinitionID
     )
     
-    $cred = Get-VstsTfsClientCredentials
-    
+    $token = New-VSTSAuthenticationToken
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
 
-    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Credential $cred
+    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Headers @{Authorization = $token} 
     Write-Verbose "Builds $_builds"
     return $_builds
 }
@@ -114,6 +131,7 @@ function Invoke-CheckBuildChanged
     {
         Write-Error "Error retrieving BuildID"
     }
+
 
 
     $cred = Get-VstsTfsClientCredentials
