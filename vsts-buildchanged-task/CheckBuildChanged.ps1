@@ -115,6 +115,9 @@ function Invoke-CheckBuildChanged
         Write-Error "Error retrieving BuildID"
     }
 
+
+    $cred = Get-VstsTfsClientCredentials
+    Write-Host "cred: $cred"
     $currentBuildID = $env:Build_BuildID
     $CurrentBuild = Get-BuildById -BuildId $currentBuildID
     $builds = Get-BuildsByDefinition -BuildDefinitionID $CurrentBuild.definition[0].id
