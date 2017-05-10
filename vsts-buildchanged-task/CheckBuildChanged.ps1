@@ -8,7 +8,6 @@ param
     [switch] $localRun
 )
 
-Import-Module .\ps_modules\VstsTaskSdk
 
 #global variables
 $baseurl = $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI 
