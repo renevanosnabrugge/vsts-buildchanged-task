@@ -22,8 +22,8 @@ function New-VSTSAuthenticationToken
          
     $accesstoken = "";
 
-    $serviceEndpoint = Get-ServiceEndpoint -Name "$VSTSEndPoint" -Context $distributedTaskContext
-    $token = $serviceEndpoint.Authorization.Parameters.apitoken
+    $serviceEndpoint = (Get-VSTSEndpoint -Name "$VSTSEndPoint") 
+    $token = $serviceEndpoint.auth.parameters.AccessToken
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($token))
     $accesstoken = "Basic $encodedCreds"
     return $accesstoken;
