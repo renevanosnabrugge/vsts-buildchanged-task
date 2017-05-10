@@ -1,10 +1,10 @@
 [cmdletbinding()]
 param
 (
+    [string] $VSTSEndPoint,
     [string] $outputVarBuildResult,
     [string] $tagsBuildChanged,
     [string] $tagsBuildNotChanged,
-    [string] $VSTSEndPoint,
     [switch] $localRun
 )
 
@@ -14,6 +14,7 @@ $baseurl = $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI
 $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 
 Write-Debug  "baseurl=$baseurl"
+Write-Host  "VSTS EndPoint=$VSTSEndPoint"
 
 function New-VSTSAuthenticationToken
 {
@@ -22,7 +23,7 @@ function New-VSTSAuthenticationToken
          
     $accesstoken = "";
 
-    $serviceEndpoint = (Get-VSTSEndpoint -Name "$VSTSEndPoint") 
+    $serviceEndpoint = Get-VSTSEndpoint -Name $VSTSEndPoint 
     $token = $serviceEndpoint.auth.parameters.AccessToken
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($token))
     $accesstoken = "Basic $encodedCreds"
