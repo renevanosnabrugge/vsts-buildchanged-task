@@ -43,7 +43,7 @@ function Get-BuildDefinition
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
-    $cred = Get-VstsTfsClientCredentials
+    
     $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers @{Authorization = $token} 
     $buildDef = $response.value | Where-Object {$_.name -eq $BuildDefinitionName} | select -First 1
     Write-Verbose "Build Definition: $buildDef"
