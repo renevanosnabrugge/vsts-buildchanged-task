@@ -5,7 +5,7 @@
   "description": "Checks if build changed since last succesful build",
   "helpMarkDown": "Version: #{Build.BuildNumber}#. [More Information](https://github.com/renevanosnabrugge/vsts-buildchanged-task/wiki)",
   "category": "Utility",
-  "author": "René van Osnabrugge",
+  "author": "Rene van Osnabrugge",
   "version": {
     "Major": 0,
     "Minor": 0,

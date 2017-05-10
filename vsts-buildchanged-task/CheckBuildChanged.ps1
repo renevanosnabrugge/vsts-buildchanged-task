@@ -13,31 +13,6 @@ $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 
 Write-Debug  "baseurl=$baseurl"
 
-function New-VSTSAuthenticationToken
-{
-    [CmdletBinding()]
-    [OutputType([object])]
-         
-    $accesstoken = "";
-    if([string]::IsNullOrEmpty($env:System_AccessToken)) 
-    {
-        if([string]::IsNullOrEmpty($env:PersonalAccessToken))
-        {
-            throw "No token provided. Use either env:PersonalAccessToken for Localruns or use in VSTS Build/Release (System_AccessToken)"
-        } 
-        Write-Debug $($env:PersonalAccessToken)
-        $userpass = ":$($env:PersonalAccessToken)"
-        $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($userpass))
-        $accesstoken = "Basic $encodedCreds"
-    }
-    else 
-    {
-        $accesstoken = "Bearer $env:System_AccessToken"
-    }
-
-    return $accesstoken;
-}
-
 function Get-BuildDefinition
 {
     [CmdletBinding()]
@@ -47,7 +22,6 @@ function Get-BuildDefinition
         [string] $BuildDefinitionName=""
     )
 
-    $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
@@ -66,7 +40,6 @@ function Get-BuildById
         [int] $BuildId
     )
 
-    $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/builds/$BuildId"
     
     $response = Invoke-RestMethod -Uri $bdURL -Method Get -UseDefaultCredentials
@@ -92,7 +65,6 @@ function Set-BuildTag
 
     $buildTagsArray = $BuildTags.Split(";");
 
-    $token = New-VSTSAuthenticationToken
 
     Write-Verbose "BaseURL: [$baseurl]"
     Write-Verbose "tagURL: [$tagURL]"
@@ -122,7 +94,6 @@ function Get-BuildsByDefinition
     (
         [int] $BuildDefinitionID
     )
-    $token = New-VSTSAuthenticationToken
     
     
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
