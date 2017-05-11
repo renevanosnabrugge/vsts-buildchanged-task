@@ -1,7 +1,7 @@
 [cmdletbinding()]
 param
 (
-    [string] $VSTSEndPoint,
+    [string] $connectedServiceName,
     [string] $outputVarBuildResult,
     [string] $tagsBuildChanged,
     [string] $tagsBuildNotChanged,
@@ -23,8 +23,9 @@ function New-VSTSAuthenticationToken
          
     $accesstoken = "";
 
-    $serviceEndpoint = Get-VSTSEndpoint -Name $VSTSEndPoint 
-    $token = $serviceEndpoint.auth.parameters.AccessToken
+    $endpoint = (Get-VstsEndpoint -Name $connectedServiceName -Require)
+    $token = [string]$endpoint.auth.parameters.AccessToken
+
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($token))
     $accesstoken = "Basic $encodedCreds"
     return $accesstoken;
