@@ -69,7 +69,7 @@
   },
   "files": [
     {
-      "path": "vsts-buildchanged-task/ps-modules"
+      "path": "vsts-buildchanged-task/ps_modules"
     },
     {
       "path": "vsts-buildchanged-task/CheckBuildChanged.ps1"
