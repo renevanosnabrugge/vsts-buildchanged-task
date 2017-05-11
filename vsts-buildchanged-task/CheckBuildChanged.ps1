@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param()
-$outputVarBuildResult = Get-VstsInput -Name "outputVarBuildResult",
-$tagsBuildChanged = Get-VstsInput -Name "tagsBuildChanged",
-$tagsBuildNotChanged =Get-VstsInput -Name "tagsBuildNotChanged",
+$outputVarBuildResult = Get-VstsInput -Name outputVarBuildResult,
+$tagsBuildChanged = Get-VstsInput -Name tagsBuildChanged,
+$tagsBuildNotChanged =Get-VstsInput -Name tagsBuildNotChanged,
 
 
 #global variables
