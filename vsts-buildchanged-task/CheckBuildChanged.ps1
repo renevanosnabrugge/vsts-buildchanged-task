@@ -59,7 +59,6 @@ function Get-BuildDefinition
         [string] $BuildDefinitionName=""
     )
 
-    $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
@@ -79,7 +78,6 @@ function Get-BuildById
         [int] $BuildId
     )
 
-    $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/builds/$BuildId"
     
     $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers $headers
@@ -103,7 +101,6 @@ function Set-BuildTag
         return
     }
 
-    $token = New-VSTSAuthenticationToken
     $buildTagsArray = $BuildTags.Split(";");
 
 
@@ -136,7 +133,6 @@ function Get-BuildsByDefinition
         [int] $BuildDefinitionID
     )
     
-    $token = New-VSTSAuthenticationToken
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
 
     $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Headers $headers
