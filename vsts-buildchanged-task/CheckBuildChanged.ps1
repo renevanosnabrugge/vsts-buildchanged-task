@@ -1,8 +1,9 @@
 [CmdletBinding()]
 param()
-$outputVarBuildResult = Get-VstsInput -Name outputVarBuildResult,
-$tagsBuildChanged = Get-VstsInput -Name tagsBuildChanged,
-$tagsBuildNotChanged =Get-VstsInput -Name tagsBuildNotChanged,
+
+$outputVarBuildResult = Get-VstsInput -Name outputVarBuildResult
+$tagsBuildChanged = Get-VstsInput -Name tagsBuildChanged
+$tagsBuildNotChanged =Get-VstsInput -Name tagsBuildNotChanged
 
 
 #global variables
@@ -12,19 +13,41 @@ $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 Write-Debug  "baseurl=$baseurl"
 Write-Host  "VSTS EndPoint=$connectedServiceName"
 
-function New-VSTSAuthenticationToken
+function InitializeRestHeaders()
 {
-    [CmdletBinding()]
-    [OutputType([object])]
-         
-    $accesstoken = "";
+	$restHeaders = New-Object -TypeName "System.Collections.Generic.Dictionary[[String], [String]]"
+	if([string]::IsNullOrWhiteSpace($connectedServiceName))
+	{
+		$patToken = GetAccessToken $connectedServiceDetails
+		ValidatePatToken $patToken
+		$restHeaders.Add("Authorization", [String]::Concat("Bearer ", $patToken))
+		
+	}
+	else
+	{
+		$Username = $connectedServiceDetails.Authorization.Parameters.Username
+		Write-Verbose "Username = $Username" -Verbose
+		$Password = $connectedServiceDetails.Authorization.Parameters.Password
+		$alternateCreds = [String]::Concat($Username, ":", $Password)
+		$basicAuth = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($alternateCreds))
+		$restHeaders.Add("Authorization", [String]::Concat("Basic ", $basicAuth))
+	}
+	return $restHeaders
+}
 
-    $endpoint = (Get-VstsEndpoint -Name SystemVssConnection -Require)
-    $token = [string]$endpoint.auth.parameters.AccessToken
+function GetAccessToken($vssEndPoint) 
+{
+        $endpoint = (Get-VstsEndpoint -Name SystemVssConnection -Require)
+        $vssCredential = [string]$endpoint.auth.parameters.AccessToken	
+        return $vssCredential
+}
 
-    $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($token))
-    $accesstoken = "Basic $encodedCreds"
-    return $accesstoken;
+function ValidatePatToken($token)
+{
+	if([string]::IsNullOrWhiteSpace($token))
+	{
+		throw "Unable to generate Personal Access Token for the user. Contact Project Collection Administrator"
+	}
 }
 
 function Get-BuildDefinition
@@ -41,7 +64,7 @@ function Get-BuildDefinition
     Write-Verbose "bdURL: $bdURL"
     
     
-    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers @{Authorization = $token} 
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers $headers
     $buildDef = $response.value | Where-Object {$_.name -eq $BuildDefinitionName} | select -First 1
     Write-Verbose "Build Definition: $buildDef"
     return $buildDef
@@ -59,7 +82,7 @@ function Get-BuildById
     $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/builds/$BuildId"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers @{Authorization = $token} 
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers $headers
     return $response
 }
 
@@ -94,7 +117,7 @@ function Set-BuildTag
         foreach($tag in $buildTagsArray)
         {
             $tagURL = "$baseurl/build/builds/$BuildID/tags/$tag`?api-version=2.0"
-            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -Headers @{Authorization = $token} 
+            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -Headers $headers
         }   
     }
 }
@@ -116,7 +139,7 @@ function Get-BuildsByDefinition
     $token = New-VSTSAuthenticationToken
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
 
-    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Headers @{Authorization = $token} 
+    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Headers $headers
     Write-Verbose "Builds $_builds"
     return $_builds
 }
@@ -127,6 +150,7 @@ function Invoke-CheckBuildChanged
     [CmdletBinding()]
     [OutputType([object])]
     param()
+
 
     if ($env:Build_BuildID -eq $null )
     {
@@ -164,4 +188,5 @@ function Invoke-CheckBuildChanged
     }
 }
 
+$headers=InitializeRestHeaders
 Invoke-CheckBuildChanged
