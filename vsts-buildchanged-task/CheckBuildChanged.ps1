@@ -1,12 +1,9 @@
-[cmdletbinding()]
-param
-(
-    [string] $connectedServiceName,
-    [string] $outputVarBuildResult,
-    [string] $tagsBuildChanged,
-    [string] $tagsBuildNotChanged,
-    [switch] $localRun
-)
+[CmdletBinding()]
+param()
+$connectedServiceName = Get-VstsInput -Name "connectedServiceName",
+$outputVarBuildResult = Get-VstsInput -Name "outputVarBuildResult",
+$tagsBuildChanged = Get-VstsInput -Name "tagsBuildChanged",
+$tagsBuildNotChanged =Get-VstsInput -Name "tagsBuildNotChanged",
 
 
 #global variables
@@ -14,7 +11,7 @@ $baseurl = $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI
 $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 
 Write-Debug  "baseurl=$baseurl"
-Write-Host  "VSTS EndPoint=$VSTSEndPoint"
+Write-Host  "VSTS EndPoint=$connectedServiceName"
 
 function New-VSTSAuthenticationToken
 {
@@ -23,7 +20,7 @@ function New-VSTSAuthenticationToken
          
     $accesstoken = "";
 
-    $endpoint = (Get-VstsEndpoint -Name $connectedServiceName -Require)
+    $endpoint = (Get-VstsEndpoint -Name SystemVssConnection -Require)
     $token = [string]$endpoint.auth.parameters.AccessToken
 
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($token))
@@ -128,6 +125,10 @@ function Get-BuildsByDefinition
 
 function Invoke-CheckBuildChanged
 {
+    [CmdletBinding()]
+    [OutputType([object])]
+    param()
+
     if ($env:Build_BuildID -eq $null )
     {
         Write-Error "Error retrieving BuildID"
@@ -164,8 +165,4 @@ function Invoke-CheckBuildChanged
     }
 }
 
-if (-not $localRun) 
-{
-    Invoke-CheckBuildChanged
-}
-
+Invoke-CheckBuildChanged
