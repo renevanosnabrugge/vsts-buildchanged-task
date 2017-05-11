@@ -23,14 +23,6 @@
     }
   ],
   "inputs": [
-   	{
-			"name": "VSTSEndPoint",
-			"type": "connectedService:externaltfs",
-			"label": "Current VSTS connection",
-			"defaultValue": "",
-			"required": true,
-			"helpMarkDown": "VSTS connection on current instance"
-		}, 
     {
       "defaultValue": "",
       "groupName": "general",

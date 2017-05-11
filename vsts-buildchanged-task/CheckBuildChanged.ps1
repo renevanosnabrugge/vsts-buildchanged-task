@@ -1,6 +1,5 @@
 [CmdletBinding()]
 param()
-$connectedServiceName = Get-VstsInput -Name "connectedServiceName",
 $outputVarBuildResult = Get-VstsInput -Name "outputVarBuildResult",
 $tagsBuildChanged = Get-VstsInput -Name "tagsBuildChanged",
 $tagsBuildNotChanged =Get-VstsInput -Name "tagsBuildNotChanged",
