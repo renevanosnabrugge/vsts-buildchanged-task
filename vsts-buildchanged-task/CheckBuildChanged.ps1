@@ -1,41 +1,53 @@
-[cmdletbinding()]
-param
-(
-    [string] $outputVarBuildResult,
-    [string] $tagsBuildChanged,
-    [string] $tagsBuildNotChanged,
-    [switch] $localRun
-)
+[CmdletBinding()]
+param()
+
+$outputVarBuildResult = Get-VstsInput -Name outputVarBuildResult
+$tagsBuildChanged = Get-VstsInput -Name tagsBuildChanged
+$tagsBuildNotChanged =Get-VstsInput -Name tagsBuildNotChanged
+
 
 #global variables
 $baseurl = $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI 
 $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 
 Write-Debug  "baseurl=$baseurl"
+Write-Host  "VSTS EndPoint=$connectedServiceName"
 
-function New-VSTSAuthenticationToken
+function InitializeRestHeaders()
 {
-    [CmdletBinding()]
-    [OutputType([object])]
-         
-    $accesstoken = "";
-    if([string]::IsNullOrEmpty($env:System_AccessToken)) 
-    {
-        if([string]::IsNullOrEmpty($env:PersonalAccessToken))
-        {
-            throw "No token provided. Use either env:PersonalAccessToken for Localruns or use in VSTS Build/Release (System_AccessToken)"
-        } 
-        Write-Debug $($env:PersonalAccessToken)
-        $userpass = ":$($env:PersonalAccessToken)"
-        $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($userpass))
-        $accesstoken = "Basic $encodedCreds"
-    }
-    else 
-    {
-        $accesstoken = "Bearer $env:System_AccessToken"
-    }
+	$restHeaders = New-Object -TypeName "System.Collections.Generic.Dictionary[[String], [String]]"
+	if([string]::IsNullOrWhiteSpace($connectedServiceName))
+	{
+		$patToken = GetAccessToken $connectedServiceDetails
+		ValidatePatToken $patToken
+		$restHeaders.Add("Authorization", [String]::Concat("Bearer ", $patToken))
+		
+	}
+	else
+	{
+		$Username = $connectedServiceDetails.Authorization.Parameters.Username
+		Write-Verbose "Username = $Username" -Verbose
+		$Password = $connectedServiceDetails.Authorization.Parameters.Password
+		$alternateCreds = [String]::Concat($Username, ":", $Password)
+		$basicAuth = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($alternateCreds))
+		$restHeaders.Add("Authorization", [String]::Concat("Basic ", $basicAuth))
+	}
+	return $restHeaders
+}
 
-    return $accesstoken;
+function GetAccessToken($vssEndPoint) 
+{
+        $endpoint = (Get-VstsEndpoint -Name SystemVssConnection -Require)
+        $vssCredential = [string]$endpoint.auth.parameters.AccessToken	
+        return $vssCredential
+}
+
+function ValidatePatToken($token)
+{
+	if([string]::IsNullOrWhiteSpace($token))
+	{
+		throw "Unable to generate Personal Access Token for the user. Contact Project Collection Administrator"
+	}
 }
 
 function Get-BuildDefinition
@@ -51,7 +63,8 @@ function Get-BuildDefinition
     $bdURL = "$baseurl/build/definitions?api-version=2.0"
     Write-Verbose "bdURL: $bdURL"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Headers @{Authorization = $token}  -Method Get
+    
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers $headers
     $buildDef = $response.value | Where-Object {$_.name -eq $BuildDefinitionName} | select -First 1
     Write-Verbose "Build Definition: $buildDef"
     return $buildDef
@@ -69,7 +82,7 @@ function Get-BuildById
     $token = New-VSTSAuthenticationToken
     $bdURL = "$baseurl/build/builds/$BuildId"
     
-    $response = Invoke-RestMethod -Uri $bdURL -Headers @{Authorization = $token}  -Method Get
+    $response = Invoke-RestMethod -Uri $bdURL -Method Get -Headers $headers
     return $response
 }
 
@@ -90,9 +103,9 @@ function Set-BuildTag
         return
     }
 
+    $token = New-VSTSAuthenticationToken
     $buildTagsArray = $BuildTags.Split(";");
 
-    $token = New-VSTSAuthenticationToken
 
     Write-Verbose "BaseURL: [$baseurl]"
     Write-Verbose "tagURL: [$tagURL]"
@@ -104,7 +117,7 @@ function Set-BuildTag
         foreach($tag in $buildTagsArray)
         {
             $tagURL = "$baseurl/build/builds/$BuildID/tags/$tag`?api-version=2.0"
-            $response = Invoke-RestMethod -Uri $tagURL -Headers @{Authorization = $token}  -Method Put
+            $response = Invoke-RestMethod -Uri $tagURL  -Method Put -Headers $headers
         }   
     }
 }
@@ -122,12 +135,11 @@ function Get-BuildsByDefinition
     (
         [int] $BuildDefinitionID
     )
+    
     $token = New-VSTSAuthenticationToken
-    
-    
     $buildsbyDefinitionURL = "$baseurl/build/builds?definitions=$BuildDefinitionID&api-version=2.0"
 
-    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL -Headers @{Authorization = $token}  -Method Get -ContentType "application/json" 
+    $_builds = Invoke-RestMethod -Uri $buildsbyDefinitionURL  -Method Get -ContentType "application/json" -Headers $headers
     Write-Verbose "Builds $_builds"
     return $_builds
 }
@@ -135,11 +147,15 @@ function Get-BuildsByDefinition
 
 function Invoke-CheckBuildChanged
 {
+    [CmdletBinding()]
+    [OutputType([object])]
+    param()
+
+
     if ($env:Build_BuildID -eq $null )
     {
         Write-Error "Error retrieving BuildID"
     }
-
     $currentBuildID = $env:Build_BuildID
     $CurrentBuild = Get-BuildById -BuildId $currentBuildID
     $builds = Get-BuildsByDefinition -BuildDefinitionID $CurrentBuild.definition[0].id
@@ -172,8 +188,5 @@ function Invoke-CheckBuildChanged
     }
 }
 
-if (-not $localRun) 
-{
-    Invoke-CheckBuildChanged
-}
-
+$headers=InitializeRestHeaders
+Invoke-CheckBuildChanged

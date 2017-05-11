@@ -7,6 +7,6 @@ $env:Build_BuildID = #BuildID
 
 Set-Location $PSScriptRoot
 
-. .\CheckBuildChanged.ps1 -localRun -outputvariableName test -setBuildTag $true -buildTagList "A;B;C" 
+. .\CheckBuildChanged.ps1 -localRun -outputVarBuildResult test  
 
-Invoke-CheckBuildChanged 
+Invoke-CheckBuildChanged
