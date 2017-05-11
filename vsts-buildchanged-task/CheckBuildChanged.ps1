@@ -11,7 +11,6 @@ $baseurl = $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI
 $baseurl += $env:SYSTEM_TEAMPROJECT + "/_apis"
 
 Write-Debug  "baseurl=$baseurl"
-Write-Host  "VSTS EndPoint=$connectedServiceName"
 
 function InitializeRestHeaders()
 {
