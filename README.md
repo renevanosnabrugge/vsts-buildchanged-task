@@ -1,7 +1,3 @@
-# 3rd party notice
-
-* This task has been developed by René van Osnabrugge and is not associated directly with Microsoft
-
 # Release Notes
 
 > **10-05-2017**
